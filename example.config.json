@@ -1,0 +1,9 @@
+{
+    "twitch": {
+      "bot": {
+        "prefix": "+",
+        "owners": [""],
+        "admins": [""]
+      }
+    }
+}
