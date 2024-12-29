@@ -25,46 +25,33 @@ module.exports = {
     try {
       if (!args[0]) {
         return {
-          text: "Bitte gib einen Twitch-Benutzernamen an.",
-          reply: true
+          text: 'Bitte gib einen Twitch-Benutzernamen an.',
+          reply: true,
         };
       }
 
       const username = args[0].toLowerCase();
 
-      const existingChannel = await new Promise((resolve, reject) => {
-        db.get('SELECT * FROM channels WHERE user_login = ?', [username], (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        });
-      });
+      const existingChannel = db
+        .prepare('SELECT * FROM channels WHERE user_login = ?')
+        .get(username);
 
       if (!existingChannel) {
         return {
           text: `Der Bot ist ${username} nicht beigetreten!`,
-          reply: true
+          reply: true,
         };
       }
 
-      await new Promise((resolve, reject) => {
-        db.run('DELETE FROM channels WHERE user_login = ?', [username], (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            if (client.joinedChannels.has(username)) {
-              client.part(username);
-            }
-            resolve();
-          }
-        });
-      });
+      db.prepare('DELETE FROM channels WHERE user_login = ?').run(username);
+
+      if (client.joinedChannels.has(username)) {
+        client.part(username);
+      }
 
       return {
         text: `Der Bot hat ${username} verlassen!`,
-        reply: true
+        reply: true,
       };
     } catch (error) {
       return { text: `${error.message}`, reply: true };

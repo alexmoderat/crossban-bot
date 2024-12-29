@@ -20,16 +20,13 @@ client.connect();
 
 async function JoinAllChannels() {
   try {
-    const channels = await new Promise((resolve, reject) => {
-      db.all('SELECT user_login FROM channels', (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      });
-    });
+    const channels = db.prepare('SELECT user_login FROM channels').all();
+
     if (!channels || channels.length === 0) {
       console.log('No channels to join');
       return;
     }
+    
     const channelNames = channels.map((channel) => channel.user_login);
     await client.joinAll(channelNames);
   } catch (error) {

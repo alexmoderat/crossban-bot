@@ -1,7 +1,6 @@
 const config = require('./config.json');
 const path = require('path');
 const fs = require('fs');
-const confusables = require('confusables');
 const client = require('./connections/twitch/client.js');
 const { setCooldown, hasCooldown } = require('./utils/cooldown.js');
 const { axios } = require('axios');

@@ -26,27 +26,21 @@ module.exports = {
     try {
       if (!args[0]) {
         return {
-          text: "Bitte gib einen Twitch-Benutzernamen an.",
-          reply: true
+          text: 'Bitte gib einen Twitch-Benutzernamen an.',
+          reply: true,
         };
       }
 
       const username = args[0].toLowerCase();
 
-      const existingChannel = await new Promise((resolve, reject) => {
-        db.get('SELECT * FROM channels WHERE user_login = ?', [username], (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        });
-      });
+      const existingChannel = db
+        .prepare('SELECT * FROM channels WHERE user_login = ?')
+        .get(username);
 
       if (existingChannel) {
         return {
           text: `${username} bereits beigetreten!`,
-          reply: true
+          reply: true,
         };
       }
 
@@ -57,22 +51,17 @@ module.exports = {
       }
       const userId = response.data[0].id;
 
-      await new Promise((resolve, reject) => {
-        db.run('INSERT INTO channels (user_id, user_login) VALUES (?, ?)', [userId, username], (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            if (!(client.joinedChannels.has(username))) {
-              client.join(username);
-            }
-            resolve();
-          }
-        });
-      });
+      db.prepare(
+        'INSERT INTO channels (user_id, user_login) VALUES (?, ?)'
+      ).run(userId, username);
+
+      if (!client.joinedChannels.has(username)) {
+        client.join(username);
+      }
 
       return {
         text: `Beigetreten ${username}!`,
-        reply: true
+        reply: true,
       };
     } catch (error) {
       return { text: `${error.message}`, reply: true };

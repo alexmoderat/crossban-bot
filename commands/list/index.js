@@ -25,6 +25,12 @@ module.exports = {
   execute: async (client, userstate, args) => {
     try {
       const channels = await getAllChannels();
+      if (channels.length === 0) {
+        return {
+          text: 'Keine Kanäle gefunden.',
+          reply: true,
+        };
+      }
       const channelList = channels
         .map((channel, index) => `${index + 1}. ${channel}`)
         .join('\n');
@@ -53,16 +59,13 @@ module.exports = {
 };
 
 function getAllChannels() {
-  return new Promise((resolve, reject) => {
-    db.all(`SELECT user_login FROM channels`, [], (err, rows) => {
-      if (err) {
-        console.error('Error retrieving channels:', err.message);
-        reject(err);
-      } else {
-        resolve(rows.map((row) => row.user_login));
-      }
-    });
-  });
+  try {
+    const rows = db.prepare('SELECT user_login FROM channels').all();
+    return rows.map((row) => row.user_login);
+  } catch (error) {
+    console.error('Error retrieving channels:', error.message);
+    return [];
+  }
 }
 
 async function uploadToHastebin(data) {

@@ -42,15 +42,14 @@ module.exports = {
       }
       const targetUserId = userResponse.data[0].id;
 
-      const channels = await new Promise((resolve, reject) => {
-        db.all('SELECT user_id FROM channels', (err, rows) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(rows);
-          }
-        });
-      });
+      const channels = db.prepare('SELECT user_id FROM channels').all();
+
+      if (channels.length === 0) {
+        return {
+          text: 'Keine Kanäle gefunden, um Unbans durchzuführen.',
+          reply: true,
+        };
+      }
 
       const unbanPromises = channels.map(async (channel) => {
         return unban(

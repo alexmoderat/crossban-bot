@@ -2,9 +2,7 @@
   "dependencies": {
     "@kararty/dank-twitch-irc": "^6.2.0",
     "axios": "^1.7.9",
-    "confusables": "^1.1.1",
-    "dotenv": "^16.4.7",
-    "node-fetch": "^3.3.2",
-    "sqlite3": "^5.1.7"
+    "better-sqlite3": "^11.7.0",
+    "dotenv": "^16.4.7"
   }
 }

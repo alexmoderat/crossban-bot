@@ -113,7 +113,10 @@ async function getChannelsWithIds(channel_ids) {
       const response = await axios(config);
       results.push(...response.data.data);
     } catch (error) {
-      console.error(`Error getting channels batch ${i / 100 + 1}:`, error.response.data);
+      console.error(
+        `Error getting channels batch ${i / 100 + 1}:`,
+        error.response.data
+      );
     }
   }
 

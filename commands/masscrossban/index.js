@@ -51,12 +51,14 @@ module.exports = {
       const content = response.data;
       const userLines = content.split('\n').filter((line) => line.trim());
 
-      const channels = await new Promise((resolve, reject) => {
-        db.all('SELECT user_id FROM channels', (err, rows) => {
-          if (err) reject(err);
-          else resolve(rows);
-        });
-      });
+      const channels = db.prepare('SELECT user_id FROM channels').all();
+
+      if (channels.length === 0) {
+        return {
+          text: 'Keine Kanäle gefunden, um Bans durchzuführen.',
+          reply: true,
+        };
+      }
 
       const banPromises = userLines.map(async (line) => {
         const [username, ...reasonParts] = line.trim().split(' ');
