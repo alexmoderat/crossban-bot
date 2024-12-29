@@ -68,6 +68,12 @@ module.exports = {
           }
 
           const targetUserId = userResponse.data[0].id;
+          const timestamp = new Date().toISOString();
+
+          db.prepare(`
+            DELETE FROM banned_users
+            WHERE user_id = ?
+          `).run(targetUserId);
 
           const channelUnbanPromises = channels.map((channel) =>
             unban(

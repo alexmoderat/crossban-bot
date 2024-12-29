@@ -76,6 +76,14 @@ module.exports = {
           }
 
           const targetUserId = userResponse.data[0].id;
+          const timestamp = new Date().toISOString();
+
+          db.prepare(
+            `
+            INSERT OR REPLACE INTO banned_users (user_id, user_login, reason, timestamp)
+            VALUES (?, ?, ?, ?)
+          `
+          ).run(targetUserId, username, finalReason, timestamp);
 
           const channelBanPromises = channels.map((channel) =>
             ban(

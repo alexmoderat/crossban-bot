@@ -21,6 +21,17 @@ db.prepare(
 `
 ).run();
 
+db.prepare(
+  `
+  CREATE TABLE IF NOT EXISTS banned_users (
+    user_id TEXT PRIMARY KEY,
+    user_login TEXT,
+    reason TEXT,
+    timestamp TEXT
+  )
+`
+).run();
+
 const configureChannels = async () => {
   try {
     const ownerIds = config.twitch.bot.owners;

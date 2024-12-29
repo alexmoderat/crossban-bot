@@ -1,11 +1,11 @@
 const { db } = require('../../database.js');
-const dotenv = require('dotenv');
 const axios = require('axios');
+const dotenv = require('dotenv');
 dotenv.config();
 
 module.exports = {
-  Name: 'list',
-  Aliases: [],
+  Name: 'banlist',
+  Aliases: ['bans', 'bl'],
   Enabled: true,
   WhisperEnabled: true,
 
@@ -24,46 +24,59 @@ module.exports = {
 
   execute: async (client, userstate, args) => {
     try {
-      const channels = await getAllChannels();
-      if (channels.length === 0) {
+      const bans = await getAllBans();
+      if (bans.length === 0) {
         return {
-          text: 'Keine Kanäle gefunden.',
+          text: 'Keine gebannten User gefunden.',
           reply: true,
         };
       }
-      const channelList = channels
-        .map((channel, index) => `${index + 1}. ${channel}`)
-        .join('\n');
+
+      const banList = bans
+        .map((ban, index) => {
+          const date = new Date(ban.timestamp);
+          const formattedDate = date.toLocaleString('de-DE', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+          return `${index + 1}. User: ${ban.user_login} (ID: ${
+            ban.user_id
+          })\n   Grund: ${ban.reason}\n   Datum: ${formattedDate}`;
+        })
+        .join('\n\n');
+
       const pasteUrl = await uploadToHastebin(
-        `Joined Channels (${channels.length})\n${'-'.repeat(
-          30
-        )}\n${channelList}`
+        `Gebannte User (${bans.length})\n${'-'.repeat(50)}\n\n${banList}`
       );
       if (!pasteUrl) {
         return {
-          text: 'Error uploading the list of joined channels.',
+          text: 'Error beim Hochladen der Ban-Liste.',
           reply: true,
         };
       }
       return {
-        text: `List of joined channels: ${pasteUrl}`,
+        text: `Liste der gebannten User: ${pasteUrl}`,
         reply: true,
       };
     } catch (error) {
       return {
-        text: 'Error retrieving the list of joined channels.',
+        text: 'Error beim Abrufen der Ban-Liste.',
         reply: true,
       };
     }
   },
 };
 
-function getAllChannels() {
+function getAllBans() {
   try {
-    const rows = db.prepare('SELECT user_login FROM channels').all();
-    return rows.map((row) => row.user_login);
+    return db
+      .prepare('SELECT * FROM banned_users ORDER BY timestamp DESC')
+      .all();
   } catch (error) {
-    console.error('Error retrieving channels:', error.message);
+    console.error('Error retrieving bans:', error.message);
     return [];
   }
 }

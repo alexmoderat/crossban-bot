@@ -42,6 +42,13 @@ module.exports = {
       }
       const targetUserId = userResponse.data[0].id;
 
+      db.prepare(
+        `
+        DELETE FROM banned_users
+        WHERE user_id = ?
+      `
+      ).run(targetUserId);
+
       const channels = db.prepare('SELECT user_id FROM channels').all();
 
       if (channels.length === 0) {
