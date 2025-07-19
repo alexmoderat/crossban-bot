@@ -3,32 +3,31 @@ const path = require('path');
 const fs = require('fs');
 const client = require('./connections/twitch/client.js');
 const { setCooldown, hasCooldown } = require('./utils/cooldown.js');
-const { axios } = require('axios');
+const axios = require('axios'); // Fix: axios direkt importieren, kein Destructuring
 const Utils = require('./utils/utils.js');
 const { db } = require('./database.js');
 const { sendWhisper } = require('./api/helix.js');
+
+// Globale Startzeit des Bots (optional)
+global.botStartTime = Date.now();
 
 const commands = new Map();
 const aliases = new Map();
 
 function loadCommands() {
-  const commandFolders = fs.readdirSync(path.join(__dirname, 'commands'), {
-    withFileTypes: true,
-  });
+  const commandsPath = path.join(__dirname, 'commands');
+  const commandFolders = fs.readdirSync(commandsPath, { withFileTypes: true });
+
   commandFolders.forEach((folder) => {
     if (!folder.isDirectory()) return;
-    const commandPath = path.join(
-      __dirname,
-      'commands',
-      folder.name,
-      'index.js'
-    );
 
+    const commandPath = path.join(commandsPath, folder.name, 'index.js');
     delete require.cache[require.resolve(commandPath)];
 
     try {
       const command = require(commandPath);
       commands.set(command.Name, command);
+
       if (command.Aliases) {
         command.Aliases.forEach((alias) => aliases.set(alias, command.Name));
       }
@@ -42,6 +41,7 @@ function isAuthorized(userstate, command) {
   const isOwner = config.twitch.bot.owners.includes(userstate.senderUserID);
   const isAdmin =
     config.twitch.bot.admins.includes(userstate.senderUserID) || isOwner;
+
   const userBadges = userstate.badges.map((badge) => badge.name);
 
   if (command.Access.Global === 1 && !isAdmin) return false;
@@ -49,13 +49,12 @@ function isAuthorized(userstate, command) {
 
   if (
     command.Access.Channel === 1 &&
-    !userBadges.some((badge) =>
-      ['vip', 'moderator', 'broadcaster'].includes(badge)
-    ) &&
+    !userBadges.some((badge) => ['vip', 'moderator', 'broadcaster'].includes(badge)) &&
     !isAdmin
   ) {
     return false;
   }
+
   if (
     command.Access.Channel === 2 &&
     !userBadges.some((badge) => ['moderator', 'broadcaster'].includes(badge)) &&
@@ -63,6 +62,7 @@ function isAuthorized(userstate, command) {
   ) {
     return false;
   }
+
   if (
     command.Access.Channel === 3 &&
     !userBadges.includes('broadcaster') &&
@@ -100,6 +100,7 @@ async function handleCommand(userstate, cmd, msg, isWhisper) {
 
   const hasUserReceivedCooldownWarning = hasCooldown(userCooldownWarningKey);
 
+  // Global cooldown
   if (globalCooldownDuration > 0) {
     const isGlobalOnCooldown = hasCooldown(cooldownKeyGlobal);
 
@@ -118,6 +119,7 @@ async function handleCommand(userstate, cmd, msg, isWhisper) {
     setCooldown(cooldownKeyGlobal, globalCooldownDuration);
   }
 
+  // Channel cooldown
   if (channelCooldownDuration > 0) {
     const isChannelOnCooldown = hasCooldown(cooldownKeyChannel);
 
@@ -136,6 +138,7 @@ async function handleCommand(userstate, cmd, msg, isWhisper) {
     setCooldown(cooldownKeyChannel, channelCooldownDuration);
   }
 
+  // User cooldown
   if (userCooldownDuration > 0) {
     const isUserOnCooldown = hasCooldown(cooldownKeyUser);
 
@@ -161,18 +164,16 @@ async function handleCommand(userstate, cmd, msg, isWhisper) {
       const responseText = Array.isArray(response.text)
         ? response.text
         : [response.text];
+
       for (const text of responseText) {
         const formattedMessages = formatMessage(text.trim());
+
         for (const formattedText of formattedMessages) {
           if (isWhisper) {
             await sendWhisper(userstate.senderUserID, formattedText);
           } else {
             if (response.reply) {
-              await client.reply(
-                userstate.channelName,
-                userstate.messageID,
-                formattedText
-              );
+              await client.reply(userstate.channelName, userstate.messageID, formattedText);
             } else {
               await client.say(userstate.channelName, formattedText);
             }
@@ -182,11 +183,7 @@ async function handleCommand(userstate, cmd, msg, isWhisper) {
     }
   } catch (error) {
     console.error(`Error executing command: ${cmd}`, error);
-    await client.reply(
-      userstate.channelName,
-      userstate.messageID,
-      'Error executing command.'
-    );
+    await client.reply(userstate.channelName, userstate.messageID, 'Error executing command.');
   }
 }
 
@@ -205,16 +202,15 @@ function formatMessage(text) {
   return messages;
 }
 
-function normalizeText(text) {
-  return confusables.remove(text);
-}
+// Falls du confusables brauchst, hier eine Dummy-Funktion (bitte anpassen, falls relevant)
+// function normalizeText(text) {
+//   return confusables.remove(text);
+// }
 
 client.on('PRIVMSG', async (userstate) => {
   const prefix = config.twitch.bot.prefix;
 
-  if (!userstate.messageText.startsWith(prefix)) {
-    return;
-  }
+  if (!userstate.messageText.startsWith(prefix)) return;
 
   const sanitizedMessage = userstate.messageText.replace(/@/g, '');
   const msg = sanitizedMessage.slice(prefix.length).trim().split(/ +/);
@@ -228,9 +224,7 @@ client.on('PRIVMSG', async (userstate) => {
 client.on('WHISPER', async (userstate) => {
   const prefix = config.twitch.bot.prefix;
 
-  if (!userstate.messageText.startsWith(prefix)) {
-    return;
-  }
+  if (!userstate.messageText.startsWith(prefix)) return;
 
   const sanitizedMessage = userstate.messageText.replace(/@/g, '');
   const msg = sanitizedMessage.slice(prefix.length).trim().split(/ +/);
@@ -239,7 +233,7 @@ client.on('WHISPER', async (userstate) => {
   await handleCommand(userstate, cmd, msg, true);
 });
 
-client.on('ready', async () => {
+client.on('ready', () => {
   console.log('Bot ready.');
   loadCommands();
 });
