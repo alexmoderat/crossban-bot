@@ -28,4 +28,12 @@ Ein Twitch-Bot zum Verwalten von Crossbans über mehrere Channels.
   - `CLIENT_ID`: Deine Twitch Client-ID
 
 6. Starte den Bot mit:  
-node index.js 
+node index.js
+
+## Commands
+
+Die verfügbaren Commands findest du im Ordner `commands`.
+
+**Achtung:** Der Prefix für alle Commands ist `+` (Pluszeichen).  
+Beispiel:  +cb username
+
