@@ -34,8 +34,8 @@ module.exports = {
       const username = args[0].toLowerCase();
       const baseReason = args.slice(1).join(' ');
       const reason = baseReason
-        ? `${baseReason} | Crossban originated from ${userstate.senderUsername}.`
-        : `Crossban originated from ${userstate.senderUsername}.`;
+        ? `${baseReason} | Crossbanned originated from ${userstate.senderUsername}.`
+        : `Crossbanned originated from ${userstate.senderUsername}.`;
 
       const userResponse = await getUser(username);
       if (!userResponse || !userResponse.data) {
